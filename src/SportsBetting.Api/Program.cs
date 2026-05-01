@@ -42,7 +42,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-await InitializeDatabaseAsync(app);
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    await InitializeDatabaseAsync(app);
+}
 
 if (app.Environment.IsDevelopment())
 {
