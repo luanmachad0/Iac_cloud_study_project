@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SportsBetting.Api/SportsBetting.Api.csproj" />
+    <Project Path="src/SportsBetting.Application/SportsBetting.Application.csproj" />
+    <Project Path="src/SportsBetting.Domain/SportsBetting.Domain.csproj" />
+    <Project Path="src/SportsBetting.Infrastructure/SportsBetting.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SportsBetting.E2ETests/SportsBetting.E2ETests.csproj" />
+    <Project Path="tests/SportsBetting.IntegrationTests/SportsBetting.IntegrationTests.csproj" />
+    <Project Path="tests/SportsBetting.UnitTests/SportsBetting.UnitTests.csproj" />
+  </Folder>
+</Solution>

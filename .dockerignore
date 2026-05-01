@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.vscode/
+.git/
+.github/
+tests/
+README.md
+frontend/node_modules/
+frontend/dist/
