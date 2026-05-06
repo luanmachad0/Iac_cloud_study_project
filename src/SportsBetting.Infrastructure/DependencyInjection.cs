@@ -5,6 +5,7 @@ using Amazon.SQS;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using SportsBetting.Application.Bets.Contracts;
 using SportsBetting.Infrastructure.Caching;
 using SportsBetting.Infrastructure.Messaging;
@@ -18,9 +19,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString =
-            configuration.GetConnectionString("Postgres")
-            ?? "Host=localhost;Port=5432;Database=sports_betting;Username=postgres;Password=postgres";
+        var connectionString = ResolvePostgresConnectionString(configuration);
 
         services.AddDbContext<SportsBettingDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IBetRepository, BetRepository>();
@@ -41,6 +40,61 @@ public static class DependencyInjection
         services.AddHostedService<SqsConsumerBackgroundService>();
 
         return services;
+    }
+
+    private static string ResolvePostgresConnectionString(IConfiguration configuration)
+    {
+        var configuredValue =
+            configuration["DATABASE_URL"]
+            ?? configuration.GetConnectionString("Postgres");
+
+        if (string.IsNullOrWhiteSpace(configuredValue))
+        {
+            return "Host=localhost;Port=5432;Database=sports_betting;Username=postgres;Password=postgres";
+        }
+
+        if (!configuredValue.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
+            && !configuredValue.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            return configuredValue;
+        }
+
+        return ConvertPostgresUrlToConnectionString(configuredValue);
+    }
+
+    private static string ConvertPostgresUrlToConnectionString(string postgresUrl)
+    {
+        var uri = new Uri(postgresUrl);
+        var userInfo = uri.UserInfo.Split(':', 2, StringSplitOptions.TrimEntries);
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.IsDefaultPort ? 5432 : uri.Port,
+            Database = uri.AbsolutePath.Trim('/'),
+            Username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty,
+            Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty
+        };
+
+        var query = uri.Query.TrimStart('?');
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var keyValue = pair.Split('=', 2);
+                if (keyValue.Length != 2)
+                {
+                    continue;
+                }
+
+                var key = Uri.UnescapeDataString(keyValue[0]);
+                var value = Uri.UnescapeDataString(keyValue[1]);
+                var normalized = key.Replace("_", " ", StringComparison.Ordinal);
+                builder[normalized] = value;
+            }
+        }
+
+        return builder.ConnectionString;
     }
 
     private static IAmazonS3 CreateS3Client(IConfiguration configuration)

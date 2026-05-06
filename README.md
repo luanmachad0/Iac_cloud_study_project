@@ -49,6 +49,14 @@ O workflow `.github/workflows/ci-cd.yml` faz:
   - executa `git pull`
   - executa `docker compose -f docker-compose.ec2.yml up -d --build`
 
+## Deploy no Render (alternativa sem EC2)
+
+- Configure no serviço da API:
+  - `ASPNETCORE_ENVIRONMENT=Production`
+  - `DATABASE_URL=<url-postgres-neon-ou-render>`
+- A aplicação aceita tanto `ConnectionStrings__Postgres` quanto `DATABASE_URL`.
+- Se usar URL no formato `postgresql://...`, a API converte automaticamente para connection string Npgsql.
+
 ## Checklist de deploy rapido no EC2 (Free Tier)
 
 ### 1) Criar instancia
