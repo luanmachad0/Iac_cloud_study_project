@@ -23,10 +23,26 @@ public static class DependencyInjection
 
         services.AddDbContext<SportsBettingDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IBetRepository, BetRepository>();
-        services.AddScoped<IBetResultCache, RedisBetResultCache>();
         services.AddScoped<IBetEventPublisher, SqsBetEventPublisher>();
+        ConfigureCaching(services, configuration);
 
-        var redisConnection = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+        services.AddSingleton(CreateS3Client(configuration));
+        services.AddSingleton(CreateSqsClient(configuration));
+        services.AddHostedService<SqsConsumerBackgroundService>();
+
+        return services;
+    }
+
+    private static void ConfigureCaching(IServiceCollection services, IConfiguration configuration)
+    {
+        var redisConnection = configuration.GetConnectionString("Redis");
+
+        if (string.IsNullOrWhiteSpace(redisConnection))
+        {
+            services.AddSingleton<IBetResultCache, InMemoryBetResultCache>();
+            return;
+        }
+
         services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
             var options = ConfigurationOptions.Parse(redisConnection);
@@ -34,12 +50,7 @@ public static class DependencyInjection
             options.ConnectRetry = 1;
             return ConnectionMultiplexer.Connect(options);
         });
-
-        services.AddSingleton(CreateS3Client(configuration));
-        services.AddSingleton(CreateSqsClient(configuration));
-        services.AddHostedService<SqsConsumerBackgroundService>();
-
-        return services;
+        services.AddScoped<IBetResultCache, RedisBetResultCache>();
     }
 
     private static string ResolvePostgresConnectionString(IConfiguration configuration)

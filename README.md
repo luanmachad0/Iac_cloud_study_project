@@ -54,8 +54,10 @@ O workflow `.github/workflows/ci-cd.yml` faz:
 - Configure no serviço da API:
   - `ASPNETCORE_ENVIRONMENT=Production`
   - `DATABASE_URL=<url-postgres-neon-ou-render>`
+  - `AWS__SqsQueueUrl=` (vazio para desabilitar consumidor SQS)
 - A aplicação aceita tanto `ConnectionStrings__Postgres` quanto `DATABASE_URL`.
 - Se usar URL no formato `postgresql://...`, a API converte automaticamente para connection string Npgsql.
+- Se `ConnectionStrings__Redis` não for configurado, a API usa cache em memória automaticamente.
 
 ## Checklist de deploy rapido no EC2 (Free Tier)
 
