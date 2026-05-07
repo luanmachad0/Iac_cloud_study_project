@@ -53,5 +53,12 @@ public sealed class SqsBetEventPublisher : IBetEventPublisher
                 "Bet settled event not published because queue does not exist at {QueueUrl}.",
                 _queueUrl);
         }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Bet settled event was not published to SQS. QueueUrl: {QueueUrl}",
+                _queueUrl);
+        }
     }
 }
