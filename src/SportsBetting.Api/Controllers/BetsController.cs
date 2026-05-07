@@ -8,10 +8,12 @@ namespace SportsBetting.Api.Controllers;
 public sealed class BetsController : ControllerBase
 {
     private readonly CreateBetUseCase _createBetUseCase;
+    private readonly ILogger<BetsController> _logger;
 
-    public BetsController(CreateBetUseCase createBetUseCase)
+    public BetsController(CreateBetUseCase createBetUseCase, ILogger<BetsController> logger)
     {
         _createBetUseCase = createBetUseCase;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -43,6 +45,11 @@ public sealed class BetsController : ControllerBase
         {
             return NotFound();
         }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Unexpected error on settle for bet {BetId}. TraceId: {TraceId}", betId, HttpContext.TraceIdentifier);
+            return Problem(title: "Erro ao liquidar aposta", detail: $"TraceId: {HttpContext.TraceIdentifier}", statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     [HttpGet("{betId:guid}/result")]
@@ -59,6 +66,11 @@ public sealed class BetsController : ControllerBase
         catch (KeyNotFoundException)
         {
             return NotFound();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Unexpected error on result for bet {BetId}. TraceId: {TraceId}", betId, HttpContext.TraceIdentifier);
+            return Problem(title: "Erro ao consultar resultado", detail: $"TraceId: {HttpContext.TraceIdentifier}", statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 }
