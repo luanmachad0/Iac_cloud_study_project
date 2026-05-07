@@ -37,7 +37,7 @@ public static class DependencyInjection
     {
         var redisConnection = configuration.GetConnectionString("Redis");
 
-        if (string.IsNullOrWhiteSpace(redisConnection))
+        if (ShouldUseInMemoryCache(redisConnection))
         {
             services.AddSingleton<IBetResultCache, InMemoryBetResultCache>();
             return;
@@ -51,6 +51,17 @@ public static class DependencyInjection
             return ConnectionMultiplexer.Connect(options);
         });
         services.AddScoped<IBetResultCache, RedisBetResultCache>();
+    }
+
+    private static bool ShouldUseInMemoryCache(string? redisConnection)
+    {
+        if (string.IsNullOrWhiteSpace(redisConnection))
+        {
+            return true;
+        }
+
+        return redisConnection.Contains("localhost", StringComparison.OrdinalIgnoreCase)
+            || redisConnection.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolvePostgresConnectionString(IConfiguration configuration)
